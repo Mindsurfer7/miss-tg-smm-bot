@@ -4,7 +4,7 @@ const sqlite3 = require('sqlite3').verbose();
 const config = require('../config/config');
 
 function initDatabase() {
-  const dbPath = path.resolve(__dirname, config.database.path);
+  const dbPath = path.join(__dirname, 'smm_bot.db');
   
   // Удаляем существующую базу данных, если она есть
   if (fs.existsSync(dbPath)) {
@@ -50,10 +50,10 @@ function initDatabase() {
       )
     `);
 
-    console.log('✅ База данных успешно инициализирована');
+    console.log('✅ База данных инициализирована');
   });
 
-  db.close();
+  return db;
 }
 
 // Если скрипт запущен напрямую
@@ -61,4 +61,4 @@ if (require.main === module) {
   initDatabase();
 }
 
-module.exports = { initDatabase }; 
+module.exports = initDatabase; 

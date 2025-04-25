@@ -10,7 +10,7 @@ class Database {
   }
 
   constructor() {
-    this.dbPath = path.resolve(__dirname, '..', config.database.path);
+    this.dbPath = path.join(__dirname, 'smm_bot.db');
     this.connect();
   }
 

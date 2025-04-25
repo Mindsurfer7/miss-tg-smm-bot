@@ -1,6 +1,6 @@
 const OpenAI = require('openai');
 const config = require('../config/config');
-const { logError } = require('../utils/logger');
+const { logger } = require('../utils/logger');
 
 const openai = new OpenAI({
   apiKey: config.openai.apiKey,
@@ -11,12 +11,13 @@ class OpenAIService {
     try {
       const prompt = this._buildPrompt(theme, idealPosts, userPrompt);
       
-      console.log('--- OpenAI Prompt ---');
-      console.log(prompt);
-      console.log('---------------------');
+      logger.info('--- OpenAI Prompt ---');
+      logger.info(prompt);
+      logger.info('---------------------');
 
+      logger.info('Отправка запроса к OpenAI...');
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: config.openai.model || "gpt-4",
         messages: [
           {
             role: "system",
@@ -31,10 +32,14 @@ class OpenAIService {
         max_tokens: 1000,
       });
 
-      return completion.choices[0].message.content;
+      const generatedPost = completion.choices[0].message.content;
+      logger.info('Получен ответ от OpenAI');
+      logger.info('Сгенерированный пост:', generatedPost);
+
+      return generatedPost;
     } catch (error) {
-      console.error('Ошибка при генерации поста OpenAI:', error);
-      await logError(error, 'system', 'openai_generate');
+      logger.error('Ошибка при генерации поста OpenAI:', error);
+      logger.error('Стек ошибки:', error.stack);
       throw error;
     }
   }

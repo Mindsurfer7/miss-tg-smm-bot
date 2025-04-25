@@ -1,18 +1,24 @@
-const TelegramBot = require('node-telegram-bot-api');
 const config = require('../config/config');
 const db = require('../database/db');
 const openaiService = require('../services/openaiService');
 const { logError } = require('../utils/logger');
 const { initDatabase } = require('../database/init');
+const botService = require('../services/botService');
 const fs = require('fs');
 const path = require('path');
 
 class BotController {
   constructor() {
-    this.bot = new TelegramBot(config.telegram.token, { polling: true });
+    this.bot = botService.bot;
     this.userStates = new Map();
     this.setupCommands();
     this.setupBotCommands();
+  }
+
+  // Добавляем вспомогательный метод для очистки текста от Markdown
+  cleanMarkdown(text) {
+    // Убираем маркеры ```markdown и ``` в начале и конце
+    return text.replace(/^```markdown\n?/, '').replace(/```$/, '').trim();
   }
 
   async setupBotCommands() {
@@ -130,12 +136,9 @@ class BotController {
       case 'manual_post':
         await this.handleManualPost({ chat: { id: chatId } });
         break;
-      case 'reset_db':
-        await this.handleResetDatabase({ chat: { id: chatId } });
-        break;
       default:
-        if (data.startsWith('add_theme_')) {
-            const channelId = data.replace('add_theme_', '');
+        if (data.startsWith('select_channel_add_theme_')) {
+            const channelId = data.replace('select_channel_add_theme_', '');
             await this.askForThemeName(chatId, channelId);
         } else if (data.startsWith('list_themes_')) {
             const channelId = data.replace('list_themes_', '');
@@ -305,32 +308,45 @@ class BotController {
   }
 
   async finishGeneratePost(chatId, userState, userPrompt) {
+    let loaderMessageId = null;
+    try {
+      // Отправляем сообщение о загрузке
+      const loaderMsg = await this.bot.sendMessage(chatId, '⏳ Генерирую пост... Пожалуйста, подождите.');
+      loaderMessageId = loaderMsg.message_id;
+
+      const idealPosts = await db.getIdealPosts(userState.channelId, userState.themeId);
+      const generatedPost = await openaiService.generatePost(
+        userState.theme,
+        idealPosts,
+        userPrompt === '-' ? null : userPrompt
+      );
+
+      // Удаляем сообщение о загрузке
+      await this.bot.deleteMessage(chatId, loaderMessageId);
+
+      await this.bot.sendMessage(chatId, '✅ Пост успешно сгенерирован!');
+      // В чате с ботом показываем с Markdown для удобства копирования
+      await this.bot.sendMessage(chatId, generatedPost, { parse_mode: 'Markdown' });
+      
       try {
-        const idealPosts = await db.getIdealPosts(userState.channelId, userState.themeId);
-        const generatedPost = await openaiService.generatePost(
-          userState.theme,
-          idealPosts,
-          userPrompt
-        );
-
-        await this.bot.sendMessage(chatId, '✅ Пост успешно сгенерирован!', { parse_mode: 'Markdown' });
-        await this.bot.sendMessage(chatId, generatedPost, { parse_mode: 'Markdown' });
-        
-        try {
-            const targetChannelId = userState.channelId.startsWith('-') ? userState.channelId : `@${userState.channelId}`;
-            await this.bot.sendMessage(targetChannelId, generatedPost, { parse_mode: 'Markdown' });
-            await this.bot.sendMessage(chatId, '✅ Пост успешно опубликован в канале!');
-        } catch (channelError) {
-            await logError(channelError, userState.channelId, 'generate_post_publish_channel');
-            await this.bot.sendMessage(chatId, `⚠️ Не удалось отправить пост в канал ${userState.channelId}. Проверьте, является ли бот администратором канала с правами на отправку сообщений.`);
-        }
-
-        this.userStates.delete(chatId);
-      } catch (error) {
-        await logError(error, userState.channelId, 'generate_post_finish');
-        await this.bot.sendMessage(chatId, '❌ Произошла ошибка при генерации и отправке поста.');
-        this.userStates.delete(chatId);
+        const targetChannelId = userState.channelId.startsWith('-') ? userState.channelId : `@${userState.channelId}`;
+        // В канал отправляем без Markdown и очищаем от маркеров
+        await this.bot.sendMessage(targetChannelId, this.cleanMarkdown(generatedPost));
+        await this.bot.sendMessage(chatId, '✅ Пост успешно опубликован в канале!');
+      } catch (channelError) {
+        await logError(channelError, userState.channelId, 'generate_post_publish_channel');
+        await this.bot.sendMessage(chatId, `⚠️ Не удалось отправить пост в канал ${userState.channelId}. Проверьте, является ли бот администратором канала с правами на отправку сообщений.`);
       }
+
+      this.userStates.delete(chatId);
+    } catch (error) {
+      if (loaderMessageId) {
+        try { await this.bot.deleteMessage(chatId, loaderMessageId); } catch (e) {}
+      }
+      await logError(error, userState.channelId, 'generate_post_finish');
+      await this.bot.sendMessage(chatId, '❌ Произошла ошибка при генерации и отправке поста.');
+      this.userStates.delete(chatId);
+    }
   }
 
   async startAddChannelFlow(chatId) {
@@ -364,7 +380,7 @@ class BotController {
 
       const keyboard = channels.map(channel => [{
         text: channel.name || channel.channel_id,
-        callback_data: `add_theme_${this.normalizeChannelId(channel.channel_id)}`
+        callback_data: `select_channel_add_theme_${this.normalizeChannelId(channel.channel_id)}`
       }]);
 
       await this.bot.sendMessage(
@@ -589,35 +605,36 @@ class BotController {
       loaderMessageId = loaderMsg.message_id;
 
       const idealPosts = await db.getIdealPosts(normalizedChannelId);
-      // Мы уже проверили наличие шаблонов в handleManualPostChannel, но на всякий случай
       if (!idealPosts || idealPosts.length === 0) {
-         await this.bot.deleteMessage(chatId, loaderMessageId); // Удаляем лоадер
-         await this.bot.sendMessage(chatId, `❌ В канале ${normalizedChannelId} нет шаблонов постов.`);
-         return;
+        await this.bot.deleteMessage(chatId, loaderMessageId);
+        await this.bot.sendMessage(chatId, `❌ В канале ${normalizedChannelId} нет шаблонов постов.`);
+        return;
       }
 
       const generatedPost = await openaiService.generatePost(
-        themeText, // Используем введенную тему
+        themeText,
         idealPosts
       );
       
-      await this.bot.deleteMessage(chatId, loaderMessageId); // Удаляем лоадер
+      await this.bot.deleteMessage(chatId, loaderMessageId);
 
-      await this.bot.sendMessage(chatId, '✅ Пост успешно сгенерирован!', { parse_mode: 'Markdown' });
+      await this.bot.sendMessage(chatId, '✅ Пост успешно сгенерирован!');
+      // В чате с ботом показываем с Markdown для удобства копирования
       await this.bot.sendMessage(chatId, generatedPost, { parse_mode: 'Markdown' });
       
       try {
         const targetChannelId = normalizedChannelId.startsWith('-') ? normalizedChannelId : `@${normalizedChannelId}`;
-        await this.bot.sendMessage(targetChannelId, generatedPost, { parse_mode: 'Markdown' });
+        // В канал отправляем без Markdown и очищаем от маркеров
+        await this.bot.sendMessage(targetChannelId, this.cleanMarkdown(generatedPost));
         await this.bot.sendMessage(chatId, '✅ Пост успешно опубликован в канале!');
       } catch (channelError) {
         await logError(channelError, normalizedChannelId, 'manual_post_publish');
         await this.bot.sendMessage(chatId, `⚠️ Не удалось отправить пост в канал ${normalizedChannelId}. Проверьте, является ли бот администратором канала с правами на отправку сообщений.`);
       }
     } catch (error) {
-       if (loaderMessageId) {
-           try { await this.bot.deleteMessage(chatId, loaderMessageId); } catch (e) {}
-       }
+      if (loaderMessageId) {
+        try { await this.bot.deleteMessage(chatId, loaderMessageId); } catch (e) {}
+      }
       await logError(error, channelId, 'manual_post_generate_publish');
       await this.bot.sendMessage(chatId, '❌ Произошла ошибка при генерации и публикации поста.');
     }
@@ -645,9 +662,10 @@ class BotController {
 
   async askForThemeName(chatId, channelId) {
     try {
+      const normalizedChannelId = this.normalizeChannelId(channelId);
       await this.bot.sendMessage(
         chatId,
-        'Введите название темы:',
+        `Канал: ${normalizedChannelId}\n\nВведите название темы:`,
         {
           reply_markup: {
             force_reply: true
@@ -656,20 +674,21 @@ class BotController {
       );
       this.userStates.set(chatId, {
         action: 'add_theme',
-        channelId
+        channelId: normalizedChannelId
       });
     } catch (error) {
-      await logError(error, 'system', 'ask_theme_name');
+      await logError(error, channelId, 'ask_theme_name');
       await this.bot.sendMessage(chatId, '❌ Произошла ошибка при запросе названия темы.');
     }
   }
 
   async finishAddTheme(chatId, channelId, theme) {
     try {
-      const themeId = await db.addTheme(channelId, theme);
+      const normalizedChannelId = this.normalizeChannelId(channelId);
+      const themeId = await db.addTheme(normalizedChannelId, theme);
       await this.bot.sendMessage(
         chatId,
-        `✅ Тема "${theme}" успешно добавлена в канал ${channelId}!\nID темы: ${themeId}`
+        `✅ Тема "${theme}" успешно добавлена в канал ${normalizedChannelId}!\nID темы: ${themeId}`
       );
       this.userStates.delete(chatId);
     } catch (error) {

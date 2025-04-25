@@ -6,3 +6,18 @@
 {"level":"error","message":"Ошибка при отправке лога в Telegram: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T13:36:30.587Z"}
 {"level":"error","message":"**Ошибка**\nВремя: 4/25/2025, 6:38:41 PM\nКанал: @missaimodel\nКоманда: add_channel\nОписание: SQLITE_ERROR: table channels has no column named description","timestamp":"2025-04-25T13:38:41.286Z"}
 {"level":"error","message":"Ошибка при отправке лога в Telegram: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T13:38:41.414Z"}
+{"level":"error","message":"**Ошибка**\nВремя: 4/25/2025, 8:52:00 PM\nКанал: [object Object]\nКоманда: scheduled_generation\nОписание: channelId.startsWith is not a function","timestamp":"2025-04-25T15:52:00.553Z"}
+{"level":"error","message":"Ошибка при отправке лога в Telegram: ETELEGRAM: 400 Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 104","timestamp":"2025-04-25T15:52:00.664Z"}
+{"level":"error","message":"Ошибка при запуске приложения: logger.info is not a function","stack":"TypeError: logger.info is not a function\n    at SchedulerService.start (/Users/a1/Documents/Workspace/Typescript/MissTgSMM/src/services/schedulerService.js:47:12)\n    at start (/Users/a1/Documents/Workspace/Typescript/MissTgSMM/index.js:13:22)","timestamp":"2025-04-25T15:54:53.499Z"}
+{"level":"error","message":"Ошибка при запуске приложения: logger.info is not a function","stack":"TypeError: logger.info is not a function\n    at SchedulerService.start (/Users/a1/Documents/Workspace/Typescript/MissTgSMM/src/services/schedulerService.js:47:12)\n    at start (/Users/a1/Documents/Workspace/Typescript/MissTgSMM/index.js:13:22)","timestamp":"2025-04-25T15:55:09.077Z"}
+{"level":"error","message":"Ошибка при отправке сообщения в missaimodel: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T16:00:41.961Z"}
+{"level":"error","message":"Ошибка при обработке канала missaimodel: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T16:00:41.962Z"}
+{"level":"error","message":"Ошибка при отправке сообщения в missaimodel: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T16:04:06.680Z"}
+{"level":"error","message":"Ошибка при обработке канала missaimodel: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T16:04:06.680Z"}
+{"level":"error","message":"Стек ошибки:","timestamp":"2025-04-25T16:04:06.680Z"}
+{"level":"error","message":"Ошибка при отправке сообщения в missaimodel: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T16:04:14.528Z"}
+{"level":"error","message":"Ошибка при обработке канала missaimodel: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T16:04:14.528Z"}
+{"level":"error","message":"Стек ошибки:","timestamp":"2025-04-25T16:04:14.528Z"}
+{"level":"error","message":"Ошибка при отправке сообщения в missaimodel: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T16:04:48.057Z"}
+{"level":"error","message":"Ошибка при обработке канала missaimodel: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T16:04:48.057Z"}
+{"level":"error","message":"Стек ошибки:","timestamp":"2025-04-25T16:04:48.058Z"}

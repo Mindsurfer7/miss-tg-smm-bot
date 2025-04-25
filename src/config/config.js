@@ -7,14 +7,16 @@ module.exports = {
   },
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
+    model: 'gpt-3.5-turbo'
   },
   logging: {
     channelId: process.env.LOG_CHANNEL_ID,
+    errorLogPath: './logs/error.log'
   },
   database: {
-    path: './database/smm_bot.db',
+    path: './src/database/smm_bot.db',
   },
   schedule: {
-    interval: '0 */6 * * *', // Каждые 6 часов
+    interval: '* * * * *'  // Каждую минуту
   },
 }; 

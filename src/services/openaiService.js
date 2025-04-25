@@ -7,10 +7,14 @@ const openai = new OpenAI({
 });
 
 class OpenAIService {
-  async generatePost(theme, idealPosts, userPrompt) {
+  async generatePost(theme, idealPosts, userPrompt = null) {
     try {
       const prompt = this._buildPrompt(theme, idealPosts, userPrompt);
       
+      console.log('--- OpenAI Prompt ---');
+      console.log(prompt);
+      console.log('---------------------');
+
       const completion = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -29,12 +33,13 @@ class OpenAIService {
 
       return completion.choices[0].message.content;
     } catch (error) {
+      console.error('Ошибка при генерации поста OpenAI:', error);
       await logError(error, 'system', 'openai_generate');
       throw error;
     }
   }
 
-  _buildPrompt(theme, idealPosts, userPrompt) {
+  _buildPrompt(theme, idealPosts, userPrompt = null) {
     let prompt = `Тема: ${theme}\n\n`;
     
     if (idealPosts && idealPosts.length > 0) {
@@ -46,9 +51,11 @@ class OpenAIService {
 
     if (userPrompt) {
       prompt += `\nДополнительные указания: ${userPrompt}\n`;
+    } else {
+      prompt += "\nСоздай новый уникальный пост, используя стиль и структуру примеров, но с новым содержанием.";
     }
 
-    prompt += "\nСоздай новый пост в формате Markdown, который будет соответствовать теме и стилю примеров.";
+    prompt += "\nСоздай пост в формате Markdown, который будет соответствовать теме и стилю примеров.";
 
     return prompt;
   }

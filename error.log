@@ -1,0 +1,8 @@
+{"level":"error","message":"**Ошибка**\nВремя: 4/25/2025, 6:33:39 PM\nКанал: system\nКоманда: manualpost\nОписание: SQLITE_ERROR: no such column: name","timestamp":"2025-04-25T13:33:39.260Z"}
+{"level":"error","message":"Ошибка при отправке лога в Telegram: ETELEGRAM: 400 Bad Request: can't parse entities: Can't find end of the entity starting at byte offset 121","timestamp":"2025-04-25T13:33:39.373Z"}
+{"level":"error","message":"**Ошибка**\nВремя: 4/25/2025, 6:33:44 PM\nКанал: system\nКоманда: list_channels\nОписание: SQLITE_ERROR: no such column: name","timestamp":"2025-04-25T13:33:44.137Z"}
+{"level":"error","message":"Ошибка при отправке лога в Telegram: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T13:33:44.459Z"}
+{"level":"error","message":"**Ошибка**\nВремя: 4/25/2025, 6:36:30 PM\nКанал: @missaimodel\nКоманда: add_channel\nОписание: SQLITE_ERROR: table channels has no column named name","timestamp":"2025-04-25T13:36:30.297Z"}
+{"level":"error","message":"Ошибка при отправке лога в Telegram: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T13:36:30.587Z"}
+{"level":"error","message":"**Ошибка**\nВремя: 4/25/2025, 6:38:41 PM\nКанал: @missaimodel\nКоманда: add_channel\nОписание: SQLITE_ERROR: table channels has no column named description","timestamp":"2025-04-25T13:38:41.286Z"}
+{"level":"error","message":"Ошибка при отправке лога в Telegram: ETELEGRAM: 400 Bad Request: chat not found","timestamp":"2025-04-25T13:38:41.414Z"}

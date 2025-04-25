@@ -8,8 +8,6 @@ async function start() {
     await db.init();
     logger.info('База данных инициализирована');
 
-    // Инициализация бот-контроллера
-    botController.setupCommands();
     logger.info('Бот-контроллер инициализирован');
 
     schedulerService.start();
